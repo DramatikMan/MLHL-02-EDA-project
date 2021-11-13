@@ -1,1 +1,1 @@
-# MLHL-02-data-collection-project
+# MLHL-02-EDA-project

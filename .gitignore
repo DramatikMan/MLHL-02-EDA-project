@@ -1,0 +1,10 @@
+### ~ private ~ ###
+*.env
+
+### ~ Python ~ ###
+__pycache__
+*.ipynb*
+
+### ~ Docker ~ ###
+/*.yml
+!/docker-compose.yml
