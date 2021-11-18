@@ -7,6 +7,8 @@ authors = ["Sergey Pavlov <self@sergeypavlov.dev>", "Pavel Golubev <pavelgolubev
 [tool.poetry.dependencies]
 python = "3.9.7"
 selenium = "*"
+beautifulsoup4 = "*"
+pandas = "*"
 
 [tool.poetry.dev-dependencies]
 jupyter = "*"
