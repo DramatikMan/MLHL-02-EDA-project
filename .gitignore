@@ -1,3 +1,5 @@
+*.html
+
 ### ~ private ~ ###
 *.env
 
