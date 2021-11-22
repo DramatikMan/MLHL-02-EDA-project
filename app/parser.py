@@ -1,5 +1,7 @@
 import re
+from collections.abc import Callable
 from datetime import date
+from typing import Union
 
 import pandas as pd
 from bs4 import BeautifulSoup
@@ -95,7 +97,7 @@ class Parser:
     ) -> pd.DataFrame:
         soup = BeautifulSoup(HTML, 'html.parser')
 
-        column_x_getter = {
+        col_x_func: dict[str, Callable[[Tag], Union[str, int]]] = {
             'airlines': cls.get_airlines,
             'departure_time': cls.get_departure_time,
             'arrival_time': cls.get_arrival_time,
@@ -106,11 +108,11 @@ class Parser:
             'stops_count': cls.get_stops_count
         }
 
-        df = pd.concat(
+        df: pd.DataFrame = pd.concat(
             [
                 pd.DataFrame(
-                    [[getter(child) for getter in column_x_getter.values()]],
-                    columns=column_x_getter.keys()
+                    [[getter(child) for getter in col_x_func.values()]],
+                    columns=col_x_func.keys()
                 )
                 for child in soup.children
                 if not (
