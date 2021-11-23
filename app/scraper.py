@@ -28,8 +28,8 @@ class Scraper:
 
     BASE_URL = 'https://www.skyscanner.ru/transport/flights/mosc'
 
-    def __init__(self, destination: str, on_date: date) -> None:
-        self.destination = destination
+    def __init__(self, destination: tuple[str, str], on_date: date) -> None:
+        self.destination = destination[1].lower()
 
         if (month_num := on_date.month) < 10:
             month = f'0{str(month_num)}'

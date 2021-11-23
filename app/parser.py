@@ -91,7 +91,7 @@ class Parser:
     @classmethod
     def get_dataframe(
         cls,
-        destination: str,
+        destination: tuple[str, str],
         on_date: date,
         HTML: str
     ) -> pd.DataFrame:
@@ -125,7 +125,7 @@ class Parser:
         )
 
         today: date = date.today()
-        df['destination'] = destination
+        df['destination'] = destination[0]
         df['parsing_date'] = today
         df['departure_date'] = on_date
         df['days_until'] = (on_date - today).days
