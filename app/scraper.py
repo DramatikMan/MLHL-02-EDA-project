@@ -1,7 +1,6 @@
 import logging
 import time
 from datetime import date
-from typing import Any
 
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
@@ -36,40 +35,27 @@ class Scraper:
 
     BASE_URL = 'https://www.skyscanner.ru/transport/flights/mosc'
 
-    def set_destination(self, value: tuple[str, str]) -> None:
-        name, airport = value
+    def __init__(self, destination: tuple[str, str], on_date: date) -> None:
+        name, airport = destination
         self._destination = name
         self._dest_string = airport.lower()
+        self._on_date = on_date.isoformat()
 
-    def set_on_date(self, value: date) -> None:
-        self._on_date = value.isoformat()
-
-        if (month_num := value.month) < 10:
+        if (month_num := on_date.month) < 10:
             month = f'0{str(month_num)}'
         else:
             month = str(month_num)
 
-        if (day_num := value.day) < 10:
+        if (day_num := on_date.day) < 10:
             day = f'0{str(day_num)}'
         else:
             day = str(day_num)
 
-        self._on_date_string = f'{str(value.year)[-2:]}{month}{day}'
+        self._on_date_string = f'{str(on_date.year)[-2:]}{month}{day}'
 
     @property
     def HTML(self) -> str:
         return self._HTML
-
-    def __enter__(self) -> 'Scraper':
-        self.__driver: WebDriver = webdriver.Chrome(
-            options=self.options,
-            service=Service('/usr/bin/chromedriver')
-        )
-
-        return self
-
-    def __exit__(self, *args: Any, **kwargs: Any) -> None:
-        self.__driver.quit()
 
     def check_and_handle_captcha(self, checkpoint: str) -> None:
         if self.__driver.find_elements(By.ID, 'px-captcha'):
@@ -171,8 +157,8 @@ class Scraper:
 
         self.check_and_handle_blockers(checkpoint='3')
 
-        # кликаем на кнопку "Показать больше"
-        self.__driver.execute_script('''
+        # кликаем на кнопку "Показать больше", если она есть
+        if (show_more_button := self.__driver.execute_script('''
             const matches = [];
             document.querySelectorAll('button').forEach(
                 e => e.textContent == 'Показать больше'
@@ -181,7 +167,8 @@ class Scraper:
             );
 
             return matches[0];
-        ''').click()
+        ''')) is not None:
+            show_more_button.click()
 
         self.check_and_handle_blockers(checkpoint='4')
 
@@ -211,5 +198,15 @@ class Scraper:
             extra=dict(city=self._destination, date=self._on_date)
         )
         self.__log.info('--- Starting scraper run.')
-        self.get_HTML()
+
+        self.__driver: WebDriver = webdriver.Chrome(
+            options=self.options,
+            service=Service('/usr/bin/chromedriver')
+        )
+
+        try:
+            self.get_HTML()
+        finally:
+            self.__driver.quit()
+
         self.__log.info('--- Scraper run done.')

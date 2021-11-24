@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 import pandas as pd
 from sqlalchemy import text
@@ -11,19 +11,18 @@ from .scraper import Scraper
 
 
 def main() -> None:
+    starting_point = datetime.now()
     today: date = date.today()
 
-    with Scraper() as scraper, db_engine.connect() as conn:
+    with db_engine.connect() as conn:
         result: LegacyCursorResult = conn.execute(text('SELECT * FROM city'))
         main_task_log.info('Cities loaded.')
         city: tuple[str, str]
 
         for city in result:
-            scraper.set_destination(value=city)
-
             for i in range(7):
                 on_date = today + timedelta(days=8 + i)
-                scraper.set_on_date(value=on_date)
+                scraper = Scraper(destination=city, on_date=on_date)
                 scraper.run()
 
                 df: pd.DataFrame = Parser.get_dataframe(
@@ -38,7 +37,8 @@ def main() -> None:
                     index=False
                 )
 
-    main_task_log.info('Task run is done. SUCCESS.')
+    delta: timedelta = starting_point - datetime.now()
+    main_task_log.info(f'Task run completed in {delta}. SUCCESS.')
 
 
 if __name__ == '__main__':
