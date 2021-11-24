@@ -5,6 +5,7 @@ ENV PYTHONPATH "${PYTHONPATH}:/project"
 RUN apt update && apt install \
     wget \
     unzip \
+    cron \
     -y
 RUN wget \
     -q https://chromedriver.storage.googleapis.com/95.0.4638.69/chromedriver_linux64.zip \
@@ -25,9 +26,10 @@ CMD rm -rf .venv/* \
     && bash scripts/poetry_install.sh \
     && bash scripts/run_jupyter.sh
 
-# FROM base AS production
-# COPY poetry.lock .
-# ARG build_env
-# RUN scripts/poetry_install.sh
-# RUN rm -r scripts
-# CMD poetry run python app/runner.py
+FROM base AS production
+COPY poetry.lock .
+ARG build_env
+RUN scripts/poetry_install.sh
+RUN echo "0 8 * * * cd ${PWD} && poetry run python ${PWD}/app/runner.py > /proc/1/fd/1 2>/proc/1/fd/2" >> /etc/crontab
+RUN crontab /etc/crontab
+CMD cron -f
