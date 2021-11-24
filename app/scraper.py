@@ -1,5 +1,7 @@
+import logging
 import time
 from datetime import date
+from typing import Any
 
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
@@ -9,11 +11,17 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.remote.webelement import WebElement
 
+from .loggers import scraping_log
+
 
 class Scraper:
-    __slots__ = 'destination', 'on_date', '__driver', '_HTML'
-    __driver: WebDriver
-    _HTML: str
+    __slots__ = (
+        '_destination', '_dest_string',
+        '_on_date', '_on_date_string',
+        '_HTML',
+        '__driver',
+        '__log'
+    )
 
     options = Options()
     options.headless = True
@@ -28,24 +36,44 @@ class Scraper:
 
     BASE_URL = 'https://www.skyscanner.ru/transport/flights/mosc'
 
-    def __init__(self, destination: tuple[str, str], on_date: date) -> None:
-        self.destination = destination[1].lower()
+    def set_destination(self, value: tuple[str, str]) -> None:
+        name, airport = value
+        self._destination = name
+        self._dest_string = airport.lower()
 
-        if (month_num := on_date.month) < 10:
+    def set_on_date(self, value: date) -> None:
+        self._on_date = value.isoformat()
+
+        if (month_num := value.month) < 10:
             month = f'0{str(month_num)}'
         else:
             month = str(month_num)
 
-        if (day_num := on_date.day) < 10:
+        if (day_num := value.day) < 10:
             day = f'0{str(day_num)}'
         else:
             day = str(day_num)
 
-        self.on_date = f'{str(on_date.year)[-2:]}{month}{day}'
+        self._on_date_string = f'{str(value.year)[-2:]}{month}{day}'
 
-    def check_and_handle_captcha(self, cp: str) -> None:
+    @property
+    def HTML(self) -> str:
+        return self._HTML
+
+    def __enter__(self) -> 'Scraper':
+        self.__driver: WebDriver = webdriver.Chrome(
+            options=self.options,
+            service=Service('/usr/bin/chromedriver')
+        )
+
+        return self
+
+    def __exit__(self, *args: Any, **kwargs: Any) -> None:
+        self.__driver.quit()
+
+    def check_and_handle_captcha(self, checkpoint: str) -> None:
         if self.__driver.find_elements(By.ID, 'px-captcha'):
-            print(f'--- CAPTCHA encountered at checkpoint {cp} ---')
+            self.__log.info(f'CAPTCHA encountered at checkpoint {checkpoint}.')
 
             while self.__driver.find_elements(
                 By.CLASS_NAME,
@@ -67,22 +95,21 @@ class Scraper:
 
                 time.sleep(10)
 
-            print('--- CAPTCHA handled successfully ---')
+            self.__log.info('CAPTCHA handled successfully.')
 
-    def check_and_handle_notification_prompt(self, cp: str) -> None:
+    def check_and_handle_notification_prompt(self, checkpoint: str) -> None:
         if self.__driver.find_elements(By.ID, 'price-alerts-modal'):
-            print(
-                '--- NOTIFICATION PROMPT '
-                f'encountered at checkpoint {cp} ---'
+            self.__log.info(
+                f'NOTIFICATION PROMPT encountered at checkpoint {checkpoint}.'
             )
             self.__driver \
                 .find_element(By.ID, 'price-alerts-modal') \
                 .find_element(By.TAG_NAME, 'header') \
                 .find_element(By.TAG_NAME, 'button') \
                 .click()
-            print('--- NOTIFICATION PROMPT handled successfully ---')
+            self.__log.info('NOTIFICATION PROMPT handled successfully.')
 
-    def check_and_handle_covid_prompt(self, cp: str) -> None:
+    def check_and_handle_covid_prompt(self, checkpoint: str) -> None:
         if self.__driver.execute_script('''
             const collection = document.getElementsByClassName(
                 'usabilla__overlay'
@@ -93,7 +120,9 @@ class Scraper:
                 (collection[0].style.display == 'block')
             );
         '''):
-            print(f'--- COVID PROMPT encountered at checkpoint {cp} ---')
+            self.__log.info(
+                f'COVID PROMPT encountered at checkpoint {checkpoint}.'
+            )
             self.__driver.switch_to.frame(
                 self.__driver.execute_script('''
                     return document.querySelector(
@@ -103,19 +132,19 @@ class Scraper:
             )
             self.__driver.find_element(By.ID, 'close').click()
             self.__driver.switch_to.default_content()
-            print('--- COVID PROMPT handled successfully ---')
+            self.__log.info('COVID PROMPT handled successfully.')
 
-    def check_and_handle_blockers(self, cp: str) -> None:
-        self.check_and_handle_captcha(cp=cp)
-        self.check_and_handle_notification_prompt(cp=cp)
-        self.check_and_handle_covid_prompt(cp=cp)
+    def check_and_handle_blockers(self, checkpoint: str) -> None:
+        self.check_and_handle_captcha(checkpoint=checkpoint)
+        self.check_and_handle_notification_prompt(checkpoint=checkpoint)
+        self.check_and_handle_covid_prompt(checkpoint=checkpoint)
 
     def get_HTML(self) -> None:
-        URL = f'{self.BASE_URL}/{self.destination}/{self.on_date}'
+        URL = f'{self.BASE_URL}/{self._dest_string}/{self._on_date_string}'
 
         self.__driver.get(URL)
         time.sleep(2)
-        self.check_and_handle_blockers(cp='1')
+        self.check_and_handle_blockers(checkpoint='1')
 
         # ждём, пока пропадёт индикатор продолжающейся загрузки
         while self.__driver.execute_script('''
@@ -125,7 +154,7 @@ class Scraper:
         ''') is not None:
             time.sleep(10)
 
-        self.check_and_handle_blockers(cp='2')
+        self.check_and_handle_blockers(checkpoint='2')
 
         # отключаем "комбинации авиакомпаний"
         self.__driver.execute_script('''
@@ -139,6 +168,9 @@ class Scraper:
         self.__driver.execute_script(
             'window.scrollTo(0, document.body.scrollHeight);'
         )
+
+        self.check_and_handle_blockers(checkpoint='3')
+
         # кликаем на кнопку "Показать больше"
         self.__driver.execute_script('''
             const matches = [];
@@ -150,6 +182,8 @@ class Scraper:
 
             return matches[0];
         ''').click()
+
+        self.check_and_handle_blockers(checkpoint='4')
 
         # прокручиваемся вниз, пока не будут видны все результаты
         element_count = 0
@@ -172,16 +206,10 @@ class Scraper:
         ''').get_attribute('innerHTML')
 
     def run(self) -> None:
-        self.__driver: WebDriver = webdriver.Chrome(
-            options=self.options,
-            service=Service('/usr/bin/chromedriver')
+        self.__log = logging.LoggerAdapter(
+            scraping_log,
+            extra=dict(city=self._destination, date=self._on_date)
         )
-
-        try:
-            self.get_HTML()
-        finally:
-            self.__driver.quit()
-
-    @property
-    def HTML(self) -> str:
-        return self._HTML
+        self.__log.info('--- Starting scraper run.')
+        self.get_HTML()
+        self.__log.info('--- Scraper run done.')
