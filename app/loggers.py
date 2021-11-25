@@ -1,6 +1,8 @@
 import logging
 import sys
 
+
+# main runner script events logging
 main_task_log = logging.getLogger('main_task_log')
 main_task_log.setLevel(logging.INFO)
 main_task_log_stream_handler = logging.StreamHandler(stream=sys.stdout)
@@ -10,6 +12,7 @@ main_task_log_stream_handler.setFormatter(fmt=logging.Formatter(
 ))
 main_task_log.addHandler(hdlr=main_task_log_stream_handler)
 
+# scraper runs logging
 scraping_log = logging.getLogger('scraping_log')
 scraping_log.setLevel(logging.INFO)
 scraping_stream_handler = logging.StreamHandler(stream=sys.stdout)
