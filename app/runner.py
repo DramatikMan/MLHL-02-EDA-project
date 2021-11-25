@@ -37,7 +37,7 @@ def main() -> None:
                     index=False
                 )
 
-    delta: timedelta = starting_point - datetime.now()
+    delta: timedelta = datetime.now() - starting_point
     main_task_log.info(f'Task run completed in {delta}. SUCCESS.')
 
 
