@@ -151,7 +151,7 @@ class Scraper:
         ''').click()
         time.sleep(5)
 
-        # переходим на в низ страницы
+        # переходим в низ страницы
         self.__driver.execute_script(
             'window.scrollTo(0, document.body.scrollHeight);'
         )
