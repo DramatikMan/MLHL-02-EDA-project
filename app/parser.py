@@ -1,7 +1,7 @@
 import re
 from collections.abc import Callable
 from datetime import date
-from typing import Union
+from typing import Optional, Union
 
 import pandas as pd
 from bs4 import BeautifulSoup
@@ -93,43 +93,52 @@ class Parser:
         cls,
         destination: tuple[str, str],
         on_date: date,
-        HTML: str
+        HTML: Optional[str]
     ) -> pd.DataFrame:
-        soup = BeautifulSoup(HTML, 'html.parser')
+        df_out = pd.DataFrame(columns=[
+            'destination', 'parsing_date', 'departure_date', 'days_until',
+            'airlines', 'departure_time', 'arrival_time', 'duration_m',
+            'departure_airport', 'arrival_airport',
+            'min_price', 'stops_count'
+        ])
 
-        col_x_func: dict[str, Callable[[Tag], Union[str, int]]] = {
-            'airlines': cls.get_airlines,
-            'departure_time': cls.get_departure_time,
-            'arrival_time': cls.get_arrival_time,
-            'duration_m': cls.get_duration,
-            'departure_airport': cls.get_departure_airport,
-            'arrival_airport': cls.get_arrival_airport,
-            'min_price': cls.get_min_price,
-            'stops_count': cls.get_stops_count
-        }
+        if HTML is not None:
+            soup = BeautifulSoup(HTML, 'html.parser')
 
-        df: pd.DataFrame = pd.concat(
-            [
-                pd.DataFrame(
-                    [[getter(child) for getter in col_x_func.values()]],
-                    columns=col_x_func.keys()
-                )
-                for child in soup.children
-                if not (
-                    child.has_attr('id') or
-                    child.has_attr('class') or
-                    child.find(class_=re.compile('InlineBrandBanner_link'))
-                )
-            ],
-            ignore_index=True
-        )
+            col_x_func: dict[str, Callable[[Tag], Union[str, int]]] = {
+                'airlines': cls.get_airlines,
+                'departure_time': cls.get_departure_time,
+                'arrival_time': cls.get_arrival_time,
+                'duration_m': cls.get_duration,
+                'departure_airport': cls.get_departure_airport,
+                'arrival_airport': cls.get_arrival_airport,
+                'min_price': cls.get_min_price,
+                'stops_count': cls.get_stops_count
+            }
 
-        today: date = date.today()
-        df['destination'] = destination[0]
-        df['parsing_date'] = today
-        df['departure_date'] = on_date
-        df['days_until'] = (on_date - today).days
+            df: pd.DataFrame = pd.concat(
+                [
+                    pd.DataFrame(
+                        [[getter(child) for getter in col_x_func.values()]],
+                        columns=col_x_func.keys()
+                    )
+                    for child in soup.children
+                    if not (
+                        child.has_attr('id') or
+                        child.has_attr('class') or
+                        child.find(class_=re.compile('InlineBrandBanner_link'))
+                    )
+                ],
+                ignore_index=True
+            )
 
-        df = df.reindex(columns=[*df.columns[-4:], *df.columns[:-4]])
+            today: date = date.today()
+            df['destination'] = destination[0]
+            df['parsing_date'] = today
+            df['departure_date'] = on_date
+            df['days_until'] = (on_date - today).days
 
-        return df
+            df = df.reindex(columns=[*df.columns[-4:], *df.columns[:-4]])
+            df_out = pd.concat([df_out, df])
+
+        return df_out

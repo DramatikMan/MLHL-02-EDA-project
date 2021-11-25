@@ -1,6 +1,7 @@
 import logging
 import time
 from datetime import date
+from typing import Optional
 
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
@@ -54,7 +55,7 @@ class Scraper:
         self._on_date_string = f'{str(on_date.year)[-2:]}{month}{day}'
 
     @property
-    def HTML(self) -> str:
+    def HTML(self) -> Optional[str]:
         return self._HTML
 
     def check_and_handle_captcha(self, checkpoint: str) -> None:
@@ -157,56 +158,79 @@ class Scraper:
 
         self.check_and_handle_blockers(checkpoint='3')
 
-        # кликаем на кнопку "Показать больше", если она есть
-        if (show_more_button := self.__driver.execute_script('''
-            const matches = [];
-            document.querySelectorAll('button').forEach(
-                e => e.textContent == 'Показать больше'
-                ? matches.push(e)
-                : null
-            );
-
-            return matches[0];
-        ''')) is not None:
-            show_more_button.click()
-
-        self.check_and_handle_blockers(checkpoint='4')
-
-        # прокручиваемся вниз, пока не будут видны все результаты
-        element_count = 0
-
-        while (current_count := self.__driver.execute_script('''
-            return document.querySelector(
-                "div[class^='FlightsResults_dayViewItems']"
-            ).childElementCount;
-        ''')) > element_count:
-            element_count = current_count
-            self.__driver.execute_script(
-                'window.scrollTo(0, document.body.scrollHeight);'
-            )
-            time.sleep(2)
-
-        self._HTML: str = self.__driver.execute_script('''
+        if self.__driver.execute_script('''
             return document.querySelector(
                 "div[class^='FlightsResults_dayViewItems']"
             );
-        ''').get_attribute('innerHTML')
+        ''') is None:
+            self._HTML: Optional[str] = None
+            self.__log.info('No flights found.')
+        else:
+            self.check_and_handle_blockers(checkpoint='4')
+
+            # кликаем на кнопку "Показать больше", если она есть
+            if (show_more_button := self.__driver.execute_script('''
+                const matches = [];
+                document.querySelectorAll('button').forEach(
+                    e => e.textContent == 'Показать больше'
+                    ? matches.push(e)
+                    : null
+                );
+
+                return matches[0];
+            ''')) is not None:
+                show_more_button.click()
+
+            self.check_and_handle_blockers(checkpoint='5')
+
+            # прокручиваемся вниз, пока не будут видны все результаты
+            element_count = 0
+
+            while (current_count := self.__driver.execute_script('''
+                return document.querySelector(
+                    "div[class^='FlightsResults_dayViewItems']"
+                ).childElementCount;
+            ''')) > element_count:
+                element_count = current_count
+                self.__driver.execute_script(
+                    'window.scrollTo(0, document.body.scrollHeight);'
+                )
+                time.sleep(2)
+
+            self._HTML = self.__driver.execute_script('''
+                return document.querySelector(
+                    "div[class^='FlightsResults_dayViewItems']"
+                );
+            ''').get_attribute('innerHTML')
 
     def run(self) -> None:
         self.__log = logging.LoggerAdapter(
             scraping_log,
             extra=dict(city=self._destination, date=self._on_date)
         )
+
         self.__log.info('--- Starting scraper run.')
+        attempt_count, try_limit = 0, 5
 
-        self.__driver: WebDriver = webdriver.Chrome(
-            options=self.options,
-            service=Service('/usr/bin/chromedriver')
-        )
+        while attempt_count < try_limit:
+            attempt_count += 1
 
-        try:
-            self.get_HTML()
-        finally:
-            self.__driver.quit()
+            self.__driver: WebDriver = webdriver.Chrome(
+                options=self.options,
+                service=Service('/usr/bin/chromedriver')
+            )
+
+            try:
+                self.get_HTML()
+            except Exception as ex:
+                self.__log.error('Failed at attempt 'f'#{attempt_count}.')
+                self.__log.error(str(ex))
+
+                if attempt_count < try_limit:
+                    self.__log.info('Retrying...')
+            else:
+                break
+            finally:
+                self.__driver.quit()
 
         self.__log.info('--- Scraper run done.')
