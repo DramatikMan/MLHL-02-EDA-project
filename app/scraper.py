@@ -182,6 +182,7 @@ class Scraper:
                 show_more_button.click()
 
             self.check_and_handle_blockers(checkpoint='5')
+            time.sleep(2)
 
             # прокручиваемся вниз, пока не будут видны все результаты
             element_count = 0
