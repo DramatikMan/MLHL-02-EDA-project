@@ -22,7 +22,7 @@ COPY scripts scripts
 COPY app app
 
 FROM base AS development
-CMD rm -rf .venv/* \    
+CMD rm -rf .venv/* \
     && bash scripts/poetry_install.sh \
     && bash scripts/run_jupyter.sh
 
@@ -30,6 +30,6 @@ FROM base AS production
 COPY poetry.lock .
 ARG build_env
 RUN bash scripts/poetry_install.sh
-RUN echo "0 8 * * * cd ${PWD} && poetry run python ${PWD}/app/runner.py > /proc/1/fd/1 2>/proc/1/fd/2" >> /etc/crontab
+RUN echo "0 8 * * * cd ${PWD} && poetry run python ${PWD}/app/runner.py &> runner.log; poetry run python ${PWD}/app/notify.py \$?" >> /etc/crontab
 RUN crontab /etc/crontab
 CMD cron -f
