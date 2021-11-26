@@ -22,20 +22,29 @@ def main() -> None:
         for city in result:
             for i in range(7):
                 on_date = today + timedelta(days=8 + i)
-                scraper = Scraper(destination=city, on_date=on_date)
-                scraper.run()
 
-                df: pd.DataFrame = Parser.get_dataframe(
-                    destination=city,
-                    on_date=on_date,
-                    HTML=scraper.HTML
-                )
-                df.to_sql(
-                    name='flight',
-                    con=conn,
-                    if_exists='append',
-                    index=False
-                )
+                if conn.execute(text(f'''
+                    SELECT count()
+                    FROM flight
+                    WHERE
+                        parsing_date = '{today}'
+                    AND destination = '{city[0]}'
+                    AND departure_date = '{on_date.isoformat()}'
+                ''')).scalar() == 0:
+                    scraper = Scraper(destination=city, on_date=on_date)
+                    scraper.run()
+
+                    df: pd.DataFrame = Parser.get_dataframe(
+                        destination=city,
+                        on_date=on_date,
+                        HTML=scraper.HTML
+                    )
+                    df.to_sql(
+                        name='flight',
+                        con=conn,
+                        if_exists='append',
+                        index=False
+                    )
 
     delta: timedelta = datetime.now() - starting_point
     main_task_log.info(f'Task run completed in {delta}. SUCCESS.')
