@@ -27,7 +27,7 @@ def main() -> None:
                     SELECT count()
                     FROM flight
                     WHERE
-                        parsing_date = '{today}'
+                        parsing_date = '{today.isoformat()}'
                     AND destination = '{city[0]}'
                     AND departure_date = '{on_date.isoformat()}'
                 ''')).scalar() == 0:
