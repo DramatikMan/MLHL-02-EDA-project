@@ -4,10 +4,10 @@ import pandas as pd
 from sqlalchemy import text
 from sqlalchemy.engine.cursor import LegacyCursorResult
 
-from .db.config import db_engine
-from .loggers import main_task_log
-from .parser import Parser
-from .scraper import Scraper
+from app.db.config import db_engine
+from app.loggers import main_task_log
+from app.parser import Parser
+from app.scraper import Scraper
 
 
 def main() -> None:

@@ -6,7 +6,11 @@
 ### ~ Python ~ ###
 __pycache__
 .ipynb*
+.venv/
 
 ### ~ Docker ~ ###
 /*.yml
 !/docker-compose.yml
+
+### ~ IntelliJ IDEA ~ ###
+.idea/
