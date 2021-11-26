@@ -1,11 +1,11 @@
-*.html
+*.db
 
 ### ~ private ~ ###
 *.env
 
 ### ~ Python ~ ###
 __pycache__
-.ipynb*
+*.ipynb*
 .venv/
 
 ### ~ Docker ~ ###
