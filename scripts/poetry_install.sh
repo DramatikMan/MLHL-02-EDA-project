@@ -1,3 +1,5 @@
+#!/bin/bash
+
 pip install poetry
 pip install poetry-exec-plugin
 poetry config virtualenvs.in-project true
