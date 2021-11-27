@@ -91,6 +91,7 @@ class Parser:
     @classmethod
     def get_dataframe(
         cls,
+        parsing_date: date,
         destination: tuple[str, str],
         on_date: date,
         HTML: Optional[str]
@@ -132,11 +133,10 @@ class Parser:
                 ignore_index=True
             )
 
-            today: date = date.today()
             df['destination'] = destination[0]
-            df['parsing_date'] = today
+            df['parsing_date'] = parsing_date
             df['departure_date'] = on_date
-            df['days_until'] = (on_date - today).days
+            df['days_until'] = (on_date - parsing_date).days
 
             df = df.reindex(columns=[*df.columns[-4:], *df.columns[:-4]])
             df_out = pd.concat([df_out, df])

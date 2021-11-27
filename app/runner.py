@@ -19,10 +19,13 @@ def main() -> None:
         main_task_log.info('Cities loaded.')
         city: tuple[str, str]
 
-        for city in result:
-            for i in range(7):
-                on_date = today + timedelta(days=8 + i)
+        today = date.today()
 
+        for city in result:
+            on_date = today + timedelta(days=8)
+            end_date = on_date + timedelta(days=31)
+
+            while on_date < end_date:
                 if conn.execute(text(f'''
                     SELECT count()
                     FROM flight
@@ -35,6 +38,7 @@ def main() -> None:
                     scraper.run()
 
                     df: pd.DataFrame = Parser.get_dataframe(
+                        parsing_date=today,
                         destination=city,
                         on_date=on_date,
                         HTML=scraper.HTML
@@ -45,6 +49,14 @@ def main() -> None:
                         if_exists='append',
                         index=False
                     )
+                else:
+                    main_task_log.info(
+                        "Today's data for flights to "
+                        f'"{city[0]}" on {on_date.isoformat()} '
+                        'is already present in the DB. Moving on.'
+                    )
+
+                on_date += timedelta(days=1)
 
     delta: timedelta = datetime.now() - starting_point
     main_task_log.info(f'Task run completed in {delta}. SUCCESS.')
