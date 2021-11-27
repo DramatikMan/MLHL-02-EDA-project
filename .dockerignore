@@ -1,8 +1,20 @@
+*.db
+
+### ~ private ~ ###
+*.env
+
+### ~ Python ~ ###
+**/__pycache__
+**/*.ipynb*
+
 ### ~ Docker ~ ###
 **/.dockerignore
 **/Dockerfile
-*.yml
+**/*.y*ml
 
 ### ~ Git ~ ###
 .git*
 README.md
+
+### ~ development ~ ###
+*.sh
