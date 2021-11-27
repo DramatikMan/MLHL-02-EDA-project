@@ -30,6 +30,6 @@ FROM base AS production
 COPY poetry.lock .
 ARG build_env
 RUN bash scripts/poetry_install.sh
-RUN echo "0 8 * * * cd ${PWD} && poetry run python ${PWD}/app/runner.py &> runner.log; poetry run python ${PWD}/app/notify.py \$?" >> /etc/crontab
+RUN echo "0 5 * * * root cd ${PWD} && poetry run python ${PWD}/app/runner.py &> runner.log; poetry run python ${PWD}/app/notify.py \$?" >> /etc/crontab
 RUN crontab /etc/crontab
 CMD cron -f
