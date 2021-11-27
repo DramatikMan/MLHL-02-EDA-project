@@ -1,0 +1,13 @@
+services:
+
+  backend:
+
+    build:
+      args:
+        - build_env=production
+      context: .
+      target: production
+    env_file:
+      - secrets.env
+    volumes:
+      - ./sqlite.db:/project/sqlite.db
