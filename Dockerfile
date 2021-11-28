@@ -29,8 +29,7 @@ RUN crontab /etc/cron.d/scraper
 RUN printenv > /etc/environment
 
 FROM base AS development
-CMD rm -rf .venv/* \
-    && bash scripts/poetry_install.sh \
+CMD bash scripts/poetry_install.sh \
     && bash scripts/run_jupyter.sh
 
 FROM base AS production
