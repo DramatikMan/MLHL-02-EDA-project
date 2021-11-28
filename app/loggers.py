@@ -18,9 +18,9 @@ main_task_log_stdout_handler = logging.StreamHandler(stream=sys.stdout)
 main_task_log_stdout_handler.setFormatter(fmt=main_task_log_formatter)
 main_task_log.addHandler(hdlr=main_task_log_stdout_handler)
 # file output handler
-main_task_log_file_handler = logging.FileHandler(filename=LOG_PATH)
-main_task_log_file_handler.setFormatter(fmt=main_task_log_formatter)
-main_task_log.addHandler(hdlr=main_task_log_file_handler)
+# main_task_log_file_handler = logging.FileHandler(filename=LOG_PATH)
+# main_task_log_file_handler.setFormatter(fmt=main_task_log_formatter)
+# main_task_log.addHandler(hdlr=main_task_log_file_handler)
 
 # scraper runs logging
 scraping_log = logging.getLogger('scraping_log')
@@ -34,6 +34,6 @@ scraping_log_stdout_handler = logging.StreamHandler(stream=sys.stdout)
 scraping_log_stdout_handler.setFormatter(fmt=scraping_log_formatter)
 scraping_log.addHandler(hdlr=scraping_log_stdout_handler)
 # file output handler
-scraping_log_file_handler = logging.FileHandler(filename=LOG_PATH)
-scraping_log_file_handler.setFormatter(fmt=scraping_log_formatter)
-scraping_log.addHandler(hdlr=scraping_log_file_handler)
+# scraping_log_file_handler = logging.FileHandler(filename=LOG_PATH)
+# scraping_log_file_handler.setFormatter(fmt=scraping_log_formatter)
+# scraping_log.addHandler(hdlr=scraping_log_file_handler)
