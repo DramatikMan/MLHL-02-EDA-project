@@ -31,6 +31,11 @@ COPY poetry.lock .
 ARG build_env
 RUN bash scripts/poetry_install.sh
 RUN rm -r scripts
-RUN echo "0 5 * * * root cd ${PWD} && poetry run python ${PWD}/app/runner.py &> runner.log; poetry run python ${PWD}/app/notify.py \$?" >> /etc/crontab
-RUN crontab /etc/crontab
-CMD cron -f
+
+COPY crontab /etc/cron.d/scraper
+RUN sed -i "s/PROJECT_DIR/\\${PWD}/g" /etc/cron.d/scraper
+RUN chmod 0644 /etc/cron.d/scraper
+RUN crontab /etc/cron.d/scraper
+
+# cron ignores env variables which are stored outside /etc/environment (e.g. variables passed via docker ENV command or -e flag)
+CMD printenv > /etc/environment && cron -f
