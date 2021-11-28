@@ -1,0 +1,4 @@
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+0 5 * * * root cd PROJECT_DIR && poetry run python PROJECT_DIR/app/runner.py &> runner.log; poetry run python PROJECT_DIR/app/notify.py $?
