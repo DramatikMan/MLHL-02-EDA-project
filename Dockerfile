@@ -21,6 +21,13 @@ COPY pyproject.toml .
 COPY scripts scripts
 COPY app app
 
+COPY crontab /etc/cron.d/scraper
+RUN sed -i "s/PROJECT_DIR/\\${PWD}/g" /etc/cron.d/scraper
+RUN chmod 0644 /etc/cron.d/scraper
+RUN crontab /etc/cron.d/scraper
+# cron ignores env variables which are stored outside /etc/environment (e.g. variables passed via docker ENV command or -e flag)
+RUN printenv > /etc/environment
+
 FROM base AS development
 CMD rm -rf .venv/* \
     && bash scripts/poetry_install.sh \
@@ -31,11 +38,4 @@ COPY poetry.lock .
 ARG build_env
 RUN bash scripts/poetry_install.sh
 RUN rm -r scripts
-
-COPY crontab /etc/cron.d/scraper
-RUN sed -i "s/PROJECT_DIR/\\${PWD}/g" /etc/cron.d/scraper
-RUN chmod 0644 /etc/cron.d/scraper
-RUN crontab /etc/cron.d/scraper
-
-# cron ignores env variables which are stored outside /etc/environment (e.g. variables passed via docker ENV command or -e flag)
-CMD printenv > /etc/environment && cron -f
+CMD cron -f
