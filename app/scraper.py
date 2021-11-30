@@ -1,7 +1,8 @@
 import logging
+import signal
 import time
 from datetime import date
-from typing import Optional
+from typing import Any, Optional
 
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
@@ -58,9 +59,14 @@ class Scraper:
     def HTML(self) -> Optional[str]:
         return self._HTML
 
+    @staticmethod
+    def captcha_timeout_handler(signum: int, frame: Any) -> None:
+        raise TimeoutError('Timed out while handling CAPTCHA.')
+
     def check_and_handle_captcha(self, checkpoint: str) -> None:
         if self.__driver.find_elements(By.ID, 'px-captcha'):
             self.__log.info(f'CAPTCHA encountered at checkpoint {checkpoint}.')
+            signal.alarm(60)
 
             while self.__driver.find_elements(
                 By.CLASS_NAME,
@@ -82,6 +88,7 @@ class Scraper:
 
                 time.sleep(10)
 
+            signal.alarm(0)
             self.__log.info('CAPTCHA handled successfully.')
 
     def check_and_handle_notification_prompt(self, checkpoint: str) -> None:
@@ -212,6 +219,7 @@ class Scraper:
 
         self.__log.info('--- Starting scraper run.')
         attempt_count, try_limit = 0, 5
+        signal.signal(signal.SIGALRM, self.captcha_timeout_handler)
 
         while attempt_count < try_limit:
             attempt_count += 1
