@@ -127,7 +127,10 @@ class Parser:
                     if not (
                         child.has_attr('id') or
                         child.has_attr('class') or
-                        child.find(class_=re.compile('InlineBrandBanner_link'))
+                        child.find(class_=re.compile(
+                            'InlineBrandBanner_link'
+                        )) or
+                        len(child.contents) == 0
                     )
                 ],
                 ignore_index=True
