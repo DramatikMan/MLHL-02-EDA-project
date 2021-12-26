@@ -33,7 +33,7 @@ CMD bash scripts/poetry_install.sh \
 FROM base AS production
 COPY poetry.lock .
 ARG build_env
-RUN bash scripts/poetry_install.sh
+RUN scripts/poetry_install.sh
 RUN rm -r scripts
 # cron ignores env variables which are stored outside /etc/environment (e.g. variables passed via docker ENV command or -e flag)
 CMD printenv > /etc/environment && cron -f

@@ -1,7 +1,5 @@
 #!/bin/bash
 
-clear
-
 poetry run mypy \
     ${PWD}/app \
     --ignore-missing-imports \
