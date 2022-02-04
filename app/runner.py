@@ -1,12 +1,12 @@
 from datetime import date, datetime, timedelta
 
 import pandas as pd
-from sqlalchemy import text
-from sqlalchemy.engine.cursor import LegacyCursorResult
+from sqlalchemy import select
 
 from app.config import CONSECUTIVE_DATES_TO_PARSE, DATES_TO_SKIP
 from app.db.config import db_engine
 from app.db.helpers import data_is_missing
+from app.db.models import City, Flight
 from app.loggers import main_task_log
 from app.parser import Parser
 from app.scraper import Scraper
@@ -17,13 +17,11 @@ def main() -> None:
     today: date = date.today()
 
     with db_engine.connect() as conn:
-        result: LegacyCursorResult = conn.execute(text('SELECT * FROM city'))
+        cities: list[tuple[str, str]] = conn.execute(select(City)).all()
         main_task_log.info('Cities loaded.')
-        city: tuple[str, str]
-
         today = date.today()
 
-        for city in result:
+        for city in cities:
             on_date = today + timedelta(days=DATES_TO_SKIP)
             end_date = on_date + timedelta(days=CONSECUTIVE_DATES_TO_PARSE)
 
@@ -44,7 +42,7 @@ def main() -> None:
                         HTML=scraper.HTML
                     )
                     df.to_sql(
-                        name='flight',
+                        name=Flight.__tablename__,
                         con=conn,
                         if_exists='append',
                         index=False
