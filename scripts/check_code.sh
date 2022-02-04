@@ -1,15 +1,5 @@
 #!/bin/bash
 
-poetry run mypy \
-    ${PWD}/app \
-    --ignore-missing-imports \
-    --show-error-codes \
-    --strict \
-    --exclude /migrations/
-
-poetry run flake8 \
-    ${PWD}/app \
-    --count \
-    --statistics \
-    --show-source \
-    --exclude /**/migrations
+poetry exec type_check
+echo
+poetry exec lint

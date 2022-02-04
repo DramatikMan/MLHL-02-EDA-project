@@ -1,8 +1,7 @@
-# Exploratory Data Analysis project
+## Data scraper for Exploratory Data Analysis school project
 
-Команда:
-- [Cергей Павлов](https://github.com/DramatikMan)
-- [Павел Голубев](https://github.com/Schtolc)
-
-Dataset:
-- [Google Drive](https://drive.google.com/drive/folders/1tXJokp_BUtMa-QjT7XqXpQu_II9GDvhK?usp=sharing)
+Required environment variables:
+```
+CHROMEDRIVER_BIN_PATH=path_string
+TG_TOKEN=token_string
+```
