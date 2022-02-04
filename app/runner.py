@@ -5,6 +5,7 @@ from sqlalchemy import text
 from sqlalchemy.engine.cursor import LegacyCursorResult
 
 from app.db.config import db_engine
+from app.db.helpers import data_is_missing
 from app.loggers import main_task_log
 from app.parser import Parser
 from app.scraper import Scraper
@@ -26,14 +27,12 @@ def main() -> None:
             end_date = on_date + timedelta(days=31)
 
             while on_date < end_date:
-                if conn.execute(text(f'''
-                    SELECT count()
-                    FROM flight
-                    WHERE
-                        parsing_date = '{today.isoformat()}'
-                    AND destination = '{city[0]}'
-                    AND departure_date = '{on_date.isoformat()}'
-                ''')).scalar() == 0:
+                if data_is_missing(
+                    parsing_date=today,
+                    destination=city[0],
+                    departure_date=on_date,
+                    conn=conn
+                ):
                     scraper = Scraper(destination=city, on_date=on_date)
                     scraper.run()
 
