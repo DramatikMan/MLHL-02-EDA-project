@@ -4,6 +4,7 @@ import pandas as pd
 from sqlalchemy import text
 from sqlalchemy.engine.cursor import LegacyCursorResult
 
+from app.config import CONSECUTIVE_DATES_TO_PARSE, DATES_TO_SKIP
 from app.db.config import db_engine
 from app.db.helpers import data_is_missing
 from app.loggers import main_task_log
@@ -23,8 +24,8 @@ def main() -> None:
         today = date.today()
 
         for city in result:
-            on_date = today + timedelta(days=8)
-            end_date = on_date + timedelta(days=31)
+            on_date = today + timedelta(days=DATES_TO_SKIP)
+            end_date = on_date + timedelta(days=CONSECUTIVE_DATES_TO_PARSE)
 
             while on_date < end_date:
                 if data_is_missing(
