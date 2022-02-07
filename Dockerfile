@@ -1,25 +1,26 @@
-FROM python:3.9.7-slim AS base
+FROM python:3.10-slim AS base
 SHELL ["/bin/bash", "-c"]
 WORKDIR /project
 ENV PYTHONPATH "${PYTHONPATH}:/project"
+COPY pyproject.toml poetry.lock* ./
+COPY scripts scripts
+COPY app app
+
 RUN apt update && apt install \
     wget \
     unzip \
     cron \
     -y
 RUN wget \
-    -q https://chromedriver.storage.googleapis.com/95.0.4638.69/chromedriver_linux64.zip \
+    -q https://chromedriver.storage.googleapis.com/98.0.4758.80/chromedriver_linux64.zip \
     -O temp.zip \
     && unzip temp.zip -d /usr/bin \
     && rm temp.zip
 RUN wget \
-    -q https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_95.0.4638.69-1_amd64.deb \
+    -q https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_98.0.4758.80-1_amd64.deb \
     -O temp.deb \
     && apt install ./temp.deb -y \
     && rm temp.deb
-COPY pyproject.toml .
-COPY scripts scripts
-COPY app app
 
 COPY crontab /etc/cron.d/scraper
 RUN sed -i "s/PROJECT_DIR/\\${PWD}/g" /etc/cron.d/scraper
@@ -27,8 +28,12 @@ RUN chmod 0644 /etc/cron.d/scraper
 RUN crontab /etc/cron.d/scraper
 
 FROM base AS development
-CMD bash scripts/poetry_install.sh \
-    && bash scripts/run_jupyter.sh
+RUN scripts/poetry_install.sh
+CMD scripts/run_jupyter.sh
+
+FROM base AS testing
+RUN scripts/poetry_install.sh
+CMD poetry exec type_check && poetry exec lint
 
 FROM base AS production
 COPY poetry.lock .

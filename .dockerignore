@@ -1,5 +1,4 @@
-*.db
-notebook
+**/*.db
 
 ### ~ private ~ ###
 *.env

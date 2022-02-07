@@ -5,8 +5,7 @@
 
 ### ~ Python ~ ###
 __pycache__
-.ipynb*
-.venv/
+*.ipynb*
 
 ### ~ Docker ~ ###
 /*.yml
